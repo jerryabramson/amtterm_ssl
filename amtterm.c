@@ -180,6 +180,7 @@ static void usage(FILE *fp)
             "\n"
             "usage: " APPNAME " [options] host [port]\n"
             "options:\n"
+            "   -d            debug output\n"
             "   -h            print this text\n"
             "   -v            verbose (default)\n"
             "   -q            quiet\n"
@@ -222,11 +223,14 @@ int main(int argc, char *argv[])
         snprintf(r.pass, sizeof(r.pass), "%s", h);
 
     for (;;) {
-        if (-1 == (c = getopt(argc, argv, "hvqu:p:LC:c:k:")))
+        if (-1 == (c = getopt(argc, argv, "hvdqu:p:LC:c:k:")))
             break;
         switch (c) {
             case 'v':
                 r.verbose = 1;
+                break;
+            case 'd':
+                r.trace = 1;
                 break;
             case 'q':
                 r.verbose = 0;

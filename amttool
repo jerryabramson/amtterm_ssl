@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/opt/local/bin/perl
 use strict;
 use warnings;
 use SOAP::Lite;
@@ -20,6 +20,29 @@ my $amt_arg = "";
 my $amt_pass = "";
 $amt_pass = $ENV{'AMT_PASSWORD'};
 
+sub usage() {
+	print STDERR <<EOF;
+
+This utility can talk to Intel AMT managed machines.
+
+usage: amttool -host <hostname> -port <port> [-amt_user <user>] [-amt_pass <pwd>] [-cert <client_cert> -key <client_key> [-cafile <cafile>]] [-amt_command <cmd>] [-amt_args <args>] [-debug]
+commands:
+   info            - print some machine info (default).
+   reset           - reset machine.
+   powerup         - turn on machine.
+   powerdown       - turn off machine.
+   powercycle      - powercycle machine.
+
+AMT 2.5+ only:
+   netinfo         - print network config.
+   netconf <args>  - configure network (check manpage).
+
+Password is passed via AMT_PASSWORD environment variable.
+
+EOF
+    exit;
+}
+
 GetOptions ("port=i" => \$amt_port,    # numeric
             "amt_user=s" => \$amt_user,
             "amt_pass=s" => \$amt_pass,
@@ -29,7 +52,7 @@ GetOptions ("port=i" => \$amt_port,    # numeric
             "cert=s"   => \$cert,      # string
             "key=s"   => \$key,      # string
             "cafile=s"   => \$cafile,      # string
-            "debug"  => \$amt_debug);   # flag
+            "debug"  => \$amt_debug) or usage(); 
 
 if ($amt_debug) {
     printf "amt_host = $amt_host\n";
@@ -168,27 +191,6 @@ sub soap_init() {
 #############################################################################
 # functions
 
-sub usage() {
-	print STDERR <<EOF;
-
-This utility can talk to Intel AMT managed machines.
-
-usage: amttool <hostname> [-cert <client_cert> -key <client_key> [-cafile <cafile>]] [ <command> ] [ <arg(s)> ]
-commands:
-   info            - print some machine info (default).
-   reset           - reset machine.
-   powerup         - turn on machine.
-   powerdown       - turn off machine.
-   powercycle      - powercycle machine.
-
-AMT 2.5+ only:
-   netinfo         - print network config.
-   netconf <args>  - configure network (check manpage).
-
-Password is passed via AMT_PASSWORD environment variable.
-
-EOF
-}
 
 sub print_result($) {
 	my $ret = shift;
@@ -390,5 +392,6 @@ if ($amt_command eq "info") {
 	remote_control($amt_command, $amt_arg);
 } else {
 	print "unknown command: $amt_command\n";
+    usage();
 }
 
