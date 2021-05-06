@@ -215,7 +215,6 @@ int main(int argc, char *argv[])
     memcpy(r.type, "SOL ", 4);
     *(r.user) = '\0';
 
-
     r.cb_data  = &r;
     r.cb_recv  = recv_tty;
     r.cb_state = state_tty;
@@ -277,11 +276,8 @@ int main(int argc, char *argv[])
         }
     }
             
-    
-    if (optind < argc)
-        snprintf(r.host, sizeof(r.host), "%s", argv[optind]);
-    if (optind+1 < argc)
-        snprintf(r.port, sizeof(r.port), "%s", argv[optind+1]);
+    if (optind < argc)   snprintf(r.host, sizeof(r.host), "%s", argv[optind]);
+    if (optind+1 < argc) snprintf(r.port, sizeof(r.port), "%s", argv[optind+1]);
     if (0 == strlen(r.host)) {
         usage(stderr);
         exit(1);
@@ -297,7 +293,7 @@ int main(int argc, char *argv[])
             *h = 0;
         if (strlen(r.user) == 0) strcpy(r.user,"admin");
     }
-        
+
     if (0 == strlen(r.pass)) {
         tty_noecho();
         fprintf(stderr, "AMT password for username %s on host %s: ", r.user, r.host);
