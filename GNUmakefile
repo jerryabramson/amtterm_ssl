@@ -63,7 +63,7 @@ install: build
 	$(INSTALL_DATA) amt-howto.man $(mandir)/man7/amt-howto.7
 
 clean:
-	rm -f *.o *~
+	rm -f *.o *~ mk/*.dep
 	rm -f $(TARGETS)
 
 distclean: clean
