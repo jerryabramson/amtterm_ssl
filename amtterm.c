@@ -177,6 +177,12 @@ static void usage(FILE *fp)
             "\n"
             "This is " APPNAME ", release " VERSION ", I'll establish\n"
             "serial-over-lan (sol) connections to your Intel AMT boxes.\n"
+#if defined(USE_OPENSSL) || defined(USE_GNUTLS)
+            "  - Support for AMT with TLS is available\n"
+            "    with the -C command-line argument.\n"
+            "  - Support for AMT with mutual TLS is also available\n"
+            "    with the -c and -k arguments\n"
+#endif
             "\n"
             "usage: " APPNAME " [options] host [port]\n"
             "options:\n"

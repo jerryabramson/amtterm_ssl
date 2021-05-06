@@ -1,4 +1,15 @@
 # config
+#
+# By default openssl is used, if available.
+#
+# If you want to build without openssl, even if available, change
+# Make.config as below:
+#
+#   FROM:
+#     HAVE_OPENSSL := yes
+#   TO:
+#     HAVE_OPENSSL := no
+#
 
 srcdir	= .
 VPATH	= $(srcdir)
