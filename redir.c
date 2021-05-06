@@ -101,11 +101,9 @@ static ssize_t redir_write(struct redir *r, const char *buf, size_t count)
 {
     int rc;
 
-    if (r->trace)
-        hexdump("out", buf, count);
+    if (r->trace) hexdump("out", buf, count);
     rc = sslwrite(r->ctx, buf, count);
-    if (-1 == rc)
-        snprintf(r->err, sizeof(r->err), "write(socket): %s", strerror(errno));
+    if (-1 == rc) snprintf(r->err, sizeof(r->err), "write(socket): %s", strerror(errno));
     return rc;
 }
 

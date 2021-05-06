@@ -133,6 +133,7 @@ ac_pkg_config = $(shell \
 	$(call ac_b_cmd, pkg-config $(1));\
 	$(call ac_fini))
 
+
 # grep some file
 # args: regex, file
 ac_grep = $(shell \

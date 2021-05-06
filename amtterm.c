@@ -213,7 +213,8 @@ int main(int argc, char *argv[])
     memset(&r, 0, sizeof(r));
     r.verbose = 0;
     memcpy(r.type, "SOL ", 4);
-    strcpy(r.user, "admin");
+    *(r.user) = '\0';
+
 
     r.cb_data  = &r;
     r.cb_recv  = recv_tty;
@@ -287,9 +288,19 @@ int main(int argc, char *argv[])
     }
 
     tty_save();
+    if (0 == strlen(r.user)) {
+        fprintf(stderr, "AMT Username [admin] for host %s: ", r.host);
+        fgets(r.user, sizeof(r.user), stdin);
+        if (NULL != (h = strchr(r.user, '\r')))
+            *h = 0;
+        if (NULL != (h = strchr(r.user, '\n')))
+            *h = 0;
+        if (strlen(r.user) == 0) strcpy(r.user,"admin");
+    }
+        
     if (0 == strlen(r.pass)) {
         tty_noecho();
-        fprintf(stderr, "AMT password for host %s: ", r.host);
+        fprintf(stderr, "AMT password for username %s on host %s: ", r.user, r.host);
         fgets(r.pass, sizeof(r.pass), stdin);
         fprintf(stderr, "\n");
         if (NULL != (h = strchr(r.pass, '\r')))

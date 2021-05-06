@@ -454,7 +454,7 @@ ssize_t sslwrite(struct ctx *ctx,const void *buf,size_t count)
 
 #else
 
-struct ctx *sslinit(int fd,char *cacert)
+struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 {
 	return newctx(fd);
 }
