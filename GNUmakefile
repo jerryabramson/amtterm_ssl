@@ -6,11 +6,6 @@ VPATH	= $(srcdir)
 include $(srcdir)/mk/Variables.mk
 
 
-SSL_DEFS=-DUSE_OPENSSL
-pkglst+=openssl
-
-
-
 CFLAGS	+= -Wall -Wno-pointer-sign
 CFLAGS	+= -DVERSION='"$(VERSION)"'
 CFLAGS  += $(SSL_DEFS)
