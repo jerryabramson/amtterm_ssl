@@ -32,7 +32,7 @@ include mk/Autoconf.mk
 
 define make-config
 LIB		:= $(LIB)
-HAVE_GTK	:= $(call ac_pkg_config,gtk+-x11-2.0)
+HAVE_GTK	:= $(call ac_pkg_config,gtk+-2.0)
 HAVE_VTE	:= $(call ac_pkg_config,vte)
 endef
 
@@ -42,7 +42,7 @@ endef
 ifeq ($(HAVE_GTK)$(HAVE_VTE),yesyes)
   TARGETS += gamt
   gamt : CFLAGS += -Wno-strict-prototypes
-  gamt : pkglst += gtk+-x11-2.0 vte
+  gamt : pkglst += gtk+-2.0 vte
 endif
 
 CFLAGS += $(shell test "$(pkglst)" != "" && pkg-config --cflags $(pkglst))

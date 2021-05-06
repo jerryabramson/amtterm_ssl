@@ -75,6 +75,7 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 	int r;
 	int c=0;
 	struct ctx *ctx;
+	int seclevel = -1;
 
 	if(!(ctx=newctx(fd)))return NULL;
 
@@ -90,71 +91,67 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 	}
 
 
-	SSL_CTX_set_options(ctx->ctx,
-                        SSL_OP_NO_TLSv1_1|SSL_OP_NO_TLSv1_2);
+    /* Added by JAA to suppoprt old AMT */
+	seclevel = SSL_CTX_get_security_level(ctx->ctx);
+        if (ssl_verbose) printf("Current SSL Security Level = %d, setting to 0\n", seclevel);
+	SSL_CTX_set_security_level(ctx->ctx, 0);
+	seclevel = SSL_CTX_get_security_level(ctx->ctx);
+        if (ssl_verbose) printf("Current SSL Security Level = %d\n", seclevel);
 
-    if (cacert != NULL)
-    {
-        if (ssl_verbose) {
-            printf(APPNAME ": Using Certificate Authority: '%s'\n", cacert);
+        if (ssl_verbose) printf("Setting TLS Minimum Version to 1.0\n");
+	SSL_CTX_set_min_proto_version(ctx->ctx, TLS1_VERSION);
+	SSL_CTX_set_max_proto_version(ctx->ctx, TLS1_VERSION);
+
+        if (cacert != NULL) {
+            if (ssl_verbose) printf(APPNAME ": Using Certificate Authority: '%s'\n", cacert);
+            if(!SSL_CTX_load_verify_locations(ctx->ctx,cacert,NULL)) {
+                ERR_print_errors_fp(stderr);
+                goto err2;
+            }
         }
-        if(!SSL_CTX_load_verify_locations(ctx->ctx,cacert,NULL))
-        {
-            ERR_print_errors_fp(stderr);
-            goto err2;
-        }
-    }
 
 	SSL_CTX_set_verify_depth(ctx->ctx,5);
 	SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_PEER,NULL);
 
-    if (client_cert != NULL)
-    {
-        if (ssl_verbose) {
-            printf(APPNAME ": Loading client certificate: '%s'\n", client_cert);
+        if (client_cert != NULL) {
+            if (ssl_verbose) printf(APPNAME ": Loading client certificate: '%s'\n", client_cert);
+            if (!SSL_CTX_use_certificate_file(ctx->ctx, client_cert, SSL_FILETYPE_PEM)) {
+                perror("ERROR: Client certificate error!");
+                fprintf(stderr, "Looking for certificate in '%s'\'\n", client_cert);
+            }
         }
-        if (!SSL_CTX_use_certificate_file(ctx->ctx, client_cert, SSL_FILETYPE_PEM))
-        {
-            perror("ERROR: no certificate found!");
+        if (client_key != NULL) {
+            if (ssl_verbose) printf(APPNAME ": Loading client key: '%s'\n", client_key);
+            if (!SSL_CTX_use_PrivateKey_file(ctx->ctx, client_key, SSL_FILETYPE_PEM)) perror("ERROR: no private key found!");
         }
-    }
-    if (client_key != NULL)
-    {
-        if (ssl_verbose) {
-            printf(APPNAME ": Loading client key: '%s'\n", client_key);
-        }
-        if (!SSL_CTX_use_PrivateKey_file(ctx->ctx, client_key, SSL_FILETYPE_PEM))
-        {
-            perror("ERROR: no private key found!");
-        }
-    }
 
-	if(!(ctx->ssl=SSL_new(ctx->ctx)))
-	{
-		ERR_print_errors_fp(stderr);
-		goto err2;
+	if(!(ctx->ssl=SSL_new(ctx->ctx))) {
+            ERR_print_errors_fp(stderr);
+            goto err2;
 	}
 
-	if(!SSL_set_fd(ctx->ssl,ctx->fd))
-	{
-		ERR_print_errors_fp(stderr);
-		goto err3;
+	if(!SSL_set_fd(ctx->ssl,ctx->fd)) {
+            ERR_print_errors_fp(stderr);
+            goto err3;
 	}
+
+
+        /* Added by JAA to suppoprt old AMT */
+        seclevel = SSL_CTX_get_security_level(ctx->ctx);
+        if (ssl_verbose) printf("Current SSL Security Level = %d\n", seclevel);
 
   repeat:	if((r=SSL_connect(ctx->ssl))!=1)
 	{
-		switch(SSL_get_error(ctx->ssl,r))
-		{
-            case SSL_ERROR_WANT_READ:
-            case SSL_ERROR_WANT_WRITE:
-                if(++c<100)
-                {
-                    usleep(10000);
-                    goto repeat;
-                }
-		}
-		ERR_print_errors_fp(stderr);
-		goto err3;
+            switch(SSL_get_error(ctx->ssl,r)) {
+                case SSL_ERROR_WANT_READ:
+                case SSL_ERROR_WANT_WRITE:
+                    if(++c<100) {
+                        usleep(10000);
+                        goto repeat;
+                    }
+            }
+            ERR_print_errors_fp(stderr);
+            goto err3;
 	}
 
 	return ctx;
