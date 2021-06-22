@@ -75,6 +75,7 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 	int r;
 	int c=0;
 	struct ctx *ctx;
+    int seclevel = -1;
 
 	if(!(ctx=newctx(fd)))return NULL;
 
@@ -90,8 +91,13 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 	}
 
 
-	SSL_CTX_set_options(ctx->ctx,
-                        SSL_OP_NO_TLSv1_1|SSL_OP_NO_TLSv1_2);
+	/*
+	 * SSL_CTX_set_options(ctx->ctx,
+         *                     SSL_OP_NO_TLSv1_1|SSL_OP_NO_TLSv1_2);
+	 */
+        /* Added by JAA to suppoprt old AMT */
+	seclevel = SSL_CTX_get_security_level(ctx->ctx);
+    if (ssl_verbose) printf("Current SSL Security Level = %d, setting to 0\n", seclevel);
 
     if (cacert != NULL)
     {
@@ -115,14 +121,13 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
         }
         if (!SSL_CTX_use_certificate_file(ctx->ctx, client_cert, SSL_FILETYPE_PEM))
         {
-            perror("ERROR: no certificate found!");
+            perror("ERROR: Client certificate error!");
+	    fprintf(stderr, "Looking for certificate in '%s'\'\n", client_cert);
         }
     }
     if (client_key != NULL)
     {
-        if (ssl_verbose) {
-            printf(APPNAME ": Loading client key: '%s'\n", client_key);
-        }
+        if (ssl_verbose) printf(APPNAME ": Loading client key: '%s'\n", client_key);
         if (!SSL_CTX_use_PrivateKey_file(ctx->ctx, client_key, SSL_FILETYPE_PEM))
         {
             perror("ERROR: no private key found!");
@@ -140,6 +145,8 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 		ERR_print_errors_fp(stderr);
 		goto err3;
 	}
+
+
 
   repeat:	if((r=SSL_connect(ctx->ssl))!=1)
 	{
