@@ -97,7 +97,7 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 	 */
         /* Added by JAA to suppoprt old AMT */
 	seclevel = SSL_CTX_get_security_level(ctx->ctx);
-    if (ssl_verbose) printf("Current SSL Security Level = %d, setting to 0\n", seclevel);
+    if (ssl_verbose) printf("Current SSL Security Level = %d\n", seclevel);
 
     if (cacert != NULL) {
         if (ssl_verbose) printf(APPNAME ": Using Certificate Authority: '%s'\n", cacert);
