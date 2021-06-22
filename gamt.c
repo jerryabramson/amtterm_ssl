@@ -746,13 +746,13 @@ static int gamt_connect(struct gamt_window *gamt)
 
     if (0 == strlen(amt_pass)) {
         char msg[128];
-
-        snprintf(msg, sizeof(msg), "AMT password for %s@%s ?",
-                 amt_user, amt_host);
-        rc = gamt_getstring(gamt->win, "Authentication", msg,
-                            amt_pass, sizeof(amt_pass), 1);
-        if (0 != rc)
-            return -1;
+        snprintf(msg, sizeof(msg), "AMT Username for %s ?",  amt_host);
+        rc = gamt_getstring(gamt->win, "Username", msg, amt_user, 31, 0);
+        if (0 != rc) return -1;
+        *msg = '\0';
+        snprintf(msg, sizeof(msg), "AMT password for %s@%s ?", amt_user, amt_host);
+        rc = gamt_getstring(gamt->win, "Authentication", msg,  amt_pass, sizeof(amt_pass), 1);
+        if (0 != rc) return -1;
     }
 
     memset(&gamt->redir, 0, sizeof(gamt->redir));
@@ -829,7 +829,6 @@ static struct gamt_window *gamt_window()
     vte_terminal_set_scrollback_lines(VTE_TERMINAL(gamt->vte), 4096);
     // JAA
     vte_terminal_set_size(VTE_TERMINAL(gamt->vte), 160, 40);
-
 
     str = cfg_get_str(CFG_FONT);
     vte_terminal_set_font_from_string(VTE_TERMINAL(gamt->vte), str);

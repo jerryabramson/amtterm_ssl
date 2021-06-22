@@ -1,20 +1,21 @@
 # config
-USE_OPENSSL=1
-#USE_GNUTLS=1
+#
+# By default openssl is used, if available.
+#
+# If you want to build without openssl, even if available, change
+# Make.config as below:
+#
+#   FROM:
+#     HAVE_OPENSSL := yes
+#   TO:
+#     HAVE_OPENSSL := no
+#
+
 srcdir	= .
 VPATH	= $(srcdir)
 -include Make.config
 include $(srcdir)/mk/Variables.mk
 
-ifdef USE_OPENSSL
-SSL_DEFS=-DUSE_OPENSSL
-pkglst+=openssl
-endif
-
-ifdef USE_GNUTLS
-SSL_DEFS=-DUSE_GNUTLS
-pkglst+=gnutls
-endif
 
 CFLAGS	+= -Wall -Wno-pointer-sign
 CFLAGS	+= -DVERSION='"$(VERSION)"'
@@ -34,6 +35,7 @@ define make-config
 LIB		:= $(LIB)
 HAVE_GTK	:= $(call ac_pkg_config,gtk+-2.0)
 HAVE_VTE	:= $(call ac_pkg_config,vte)
+HAVE_OPENSSL	:= $(call ac_pkg_config,openssl)
 endef
 
 #################################################################
@@ -43,6 +45,11 @@ ifeq ($(HAVE_GTK)$(HAVE_VTE),yesyes)
   TARGETS += gamt
   gamt : CFLAGS += -Wno-strict-prototypes
   gamt : pkglst += gtk+-2.0 vte
+endif
+
+ifeq ($(HAVE_OPENSSL),yes)
+  SSL_DEFS=-DUSE_OPENSSL
+  pkglst+=openssl
 endif
 
 CFLAGS += $(shell test "$(pkglst)" != "" && pkg-config --cflags $(pkglst))
@@ -63,7 +70,7 @@ install: build
 	$(INSTALL_DATA) amt-howto.man $(mandir)/man7/amt-howto.7
 
 clean:
-	rm -f *.o *~
+	rm -f *.o *~ mk/*.dep
 	rm -f $(TARGETS)
 
 distclean: clean

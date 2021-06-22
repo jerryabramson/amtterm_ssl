@@ -177,6 +177,12 @@ static void usage(FILE *fp)
             "\n"
             "This is " APPNAME ", release " VERSION ", I'll establish\n"
             "serial-over-lan (sol) connections to your Intel AMT boxes.\n"
+#if defined(USE_OPENSSL) || defined(USE_GNUTLS)
+            "  - Support for AMT with TLS is available\n"
+            "    with the -C command-line argument.\n"
+            "  - Support for AMT with mutual TLS is also available\n"
+            "    with the -c and -k arguments\n"
+#endif
             "\n"
             "usage: " APPNAME " [options] host [port]\n"
             "options:\n"
@@ -213,7 +219,7 @@ int main(int argc, char *argv[])
     memset(&r, 0, sizeof(r));
     r.verbose = 0;
     memcpy(r.type, "SOL ", 4);
-    strcpy(r.user, "admin");
+    *(r.user) = '\0';
 
     r.cb_data  = &r;
     r.cb_recv  = recv_tty;
@@ -276,20 +282,27 @@ int main(int argc, char *argv[])
         }
     }
             
-    
-    if (optind < argc)
-        snprintf(r.host, sizeof(r.host), "%s", argv[optind]);
-    if (optind+1 < argc)
-        snprintf(r.port, sizeof(r.port), "%s", argv[optind+1]);
+    if (optind < argc)   snprintf(r.host, sizeof(r.host), "%s", argv[optind]);
+    if (optind+1 < argc) snprintf(r.port, sizeof(r.port), "%s", argv[optind+1]);
     if (0 == strlen(r.host)) {
         usage(stderr);
         exit(1);
     }
 
     tty_save();
+    if (0 == strlen(r.user)) {
+        fprintf(stderr, "AMT Username [admin] for host %s: ", r.host);
+        fgets(r.user, sizeof(r.user), stdin);
+        if (NULL != (h = strchr(r.user, '\r')))
+            *h = 0;
+        if (NULL != (h = strchr(r.user, '\n')))
+            *h = 0;
+        if (strlen(r.user) == 0) strcpy(r.user,"admin");
+    }
+
     if (0 == strlen(r.pass)) {
         tty_noecho();
-        fprintf(stderr, "AMT password for host %s: ", r.host);
+        fprintf(stderr, "AMT password for username %s on host %s: ", r.user, r.host);
         fgets(r.pass, sizeof(r.pass), stdin);
         fprintf(stderr, "\n");
         if (NULL != (h = strchr(r.pass, '\r')))
