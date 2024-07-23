@@ -99,8 +99,10 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key, ch
         goto err2;
     }
 
-	if (ssl_verbose) printf("Setting private key passphrase data\n");
-    SSL_CTX_set_default_passwd_cb_userdata(ctx->ctx, passphrase);
+    if (strlen(passphrase) > 0) {
+        if (ssl_verbose) printf("Setting private key passphrase data\n");
+        SSL_CTX_set_default_passwd_cb_userdata(ctx->ctx, passphrase);
+    }
 
     if (!strncmp(cacert, "ABC", 3)) {
         if (ssl_verbose) printf(APPNAME ": Using System Trust Store.\n");

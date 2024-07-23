@@ -156,15 +156,15 @@ int redir_connect(struct redir *r)
     redir_state(r, REDIR_CONNECT);
     r->sock = tcp_connect(&ai, NULL, NULL, r->host,
                           strlen(r->port) ? r->port : defport);
-    r->ctx = sslinit(r->sock, r->cacert, r->clientcert, r->clientkey, r->privateKeyPassPhrase);
+    if (r->sock != -1) {
+        r->ctx = sslinit(r->sock, r->cacert, r->clientcert, r->clientkey, r->privateKeyPassPhrase);
+    }
     if(r->ctx == NULL) {
         close(r->sock);
         r->sock = -1;
     }
     if (-1 == r->sock) {
-        redir_state(r, REDIR_ERROR);
-        /* FIXME: better error message */
-        snprintf(r->err, sizeof(r->err), "connect failed");
+        fprintf(stderr, "connection failed!\n");
         return -1;
     }
     return 0;

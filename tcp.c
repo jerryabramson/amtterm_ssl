@@ -63,24 +63,21 @@ int tcp_connect(struct addrinfo *ai,
     /* lookup peer */
     ai->ai_flags = AI_CANONNAME;
     if (0 != (rc = getaddrinfo(host, serv, ai, &res))) {
-        if (tcp_verbose)
-            fprintf(stderr, APPNAME ": getaddrinfo (peer): %s\n", gai_strerror(rc));
+        fprintf(stderr, APPNAME ": getaddrinfo (peer): %s [%s]\n", gai_strerror(rc), host);
         return -1;
     }
     for (e = res; e != NULL; e = e->ai_next) {
         if (0 != getnameinfo((struct sockaddr*)e->ai_addr,e->ai_addrlen,
                              uhost,INET6_ADDRSTRLEN,userv,32,
                              NI_NUMERICHOST | NI_NUMERICSERV)) {
-            if (tcp_verbose)
-                fprintf(stderr, APPNAME ": getnameinfo (peer): oops\n");
-            continue;
+            fprintf(stderr, APPNAME ": getnameinfo (peer): oops\n");
+            return -1;
         }
         if (-1 == (sock = socket(e->ai_family, e->ai_socktype,
                                  e->ai_protocol))) {
-            if (tcp_verbose)
-                fprintf(stderr, APPNAME ": socket (%s): %s\n",
-                        strfamily(e->ai_family),strerror(errno));
-            continue;
+            fprintf(stderr, APPNAME ": socket (%s): %s\n",
+                    strfamily(e->ai_family),strerror(errno));
+            return -1;
         }
         setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt));
         if (NULL != addr || NULL != port) {
@@ -90,18 +87,16 @@ int tcp_connect(struct addrinfo *ai,
             ask.ai_family   = e->ai_family;
             ask.ai_socktype = e->ai_socktype;
             if (0 != (rc = getaddrinfo(addr, port, &ask, &lres))) {
-                if (tcp_verbose)
-                    fprintf(stderr, APPNAME ": getaddrinfo (local): %s\n",
-                            gai_strerror(rc));
-                continue;
+                fprintf(stderr, APPNAME ": getaddrinfo (local): %s\n",
+                        gai_strerror(rc));
+                return -1;
             }
             if (0 != getnameinfo((struct sockaddr*)lres->ai_addr,
                                  lres->ai_addrlen,
                                  uaddr,INET6_ADDRSTRLEN,uport,32,
                                  NI_NUMERICHOST | NI_NUMERICSERV)) {
-                if (tcp_verbose)
-                    fprintf(stderr, APPNAME ": getnameinfo (local): oops\n");
-                continue;
+                fprintf(stderr, APPNAME ": getnameinfo (local): oops\n");
+                return -1;
             }
             if (-1 == bind(sock, lres->ai_addr, lres->ai_addrlen)) {
                 if (tcp_verbose)
@@ -113,12 +108,11 @@ int tcp_connect(struct addrinfo *ai,
         }
         /* connect to peer */
         if (-1 == connect(sock,e->ai_addr,e->ai_addrlen)) {
-            if (tcp_verbose)
-                fprintf(stderr, APPNAME ": %s %s [%s] %s connect: %s\n",
-                        strfamily(e->ai_family),e->ai_canonname,uhost,userv,
-                        strerror(errno));
+            fprintf(stderr, APPNAME ": %s %s [%s] %s connect: %s\n",
+                    strfamily(e->ai_family),e->ai_canonname,uhost,userv,
+                    strerror(errno));
             close(sock);
-            continue;
+            return -1;
         }
         if (tcp_verbose)
             fprintf(stderr, APPNAME ": %s %s [%s] %s open\n",
@@ -140,7 +134,7 @@ int tcp_listen(struct addrinfo *ai, char *addr, char *port)
     ai->ai_flags = AI_PASSIVE;
     if (0 != (rc = getaddrinfo(addr, port, ai, &res))) {
         if (tcp_verbose)
-            fprintf(stderr, APPNAME ": getaddrinfo: %s\n",gai_strerror(rc));
+            fprintf(stderr, APPNAME ": getaddrinfo: %s [%s]\n", gai_strerror(rc), addr);
         exit(1);
     }
 

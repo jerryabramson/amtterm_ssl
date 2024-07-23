@@ -291,23 +291,6 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
-    tty_save();
-    if (r.clientkey != NULL && (strlen(r.privateKeyPassPhrase) == 0)) {
-        tty_noecho();
-        fprintf(stderr, "Private Key Password: ");
-        fgets(r.privateKeyPassPhrase, sizeof(r.privateKeyPassPhrase), stdin);
-        tty_restore();
-        fprintf(stderr, "\n");
-        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\r')))
-            *h = 0;
-        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\n')))
-            *h = 0;
-        if (strlen(r.privateKeyPassPhrase) == 0) {
-            fprintf(stderr, "A private key pass phrase is required!");
-            exit(1);
-        }
-    }
-            
     if (optind < argc)   snprintf(r.host, sizeof(r.host), "%s", argv[optind]);
     if (optind+1 < argc) snprintf(r.port, sizeof(r.port), "%s", argv[optind+1]);
     if (0 == strlen(r.host)) {
@@ -325,6 +308,7 @@ int main(int argc, char *argv[])
         if (strlen(r.user) == 0) strcpy(r.user,"admin");
     }
 
+    tty_save();
     if (0 == strlen(r.pass)) {
         tty_noecho();
         fprintf(stderr, "AMT password for username %s on host %s: ", r.user, r.host);
@@ -336,6 +320,23 @@ int main(int argc, char *argv[])
         if (NULL != (h = strchr(r.pass, '\n')))
             *h = 0;
     }
+
+    if (r.clientkey != NULL && (strlen(r.privateKeyPassPhrase) == 0)) {
+        tty_noecho();
+        fprintf(stderr, "Private Key Password [enter for no pass phrase]: ");
+        fgets(r.privateKeyPassPhrase, sizeof(r.privateKeyPassPhrase), stdin);
+        tty_restore();
+        fprintf(stderr, "\n");
+        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\r')))
+            *h = 0;
+        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\n')))
+            *h = 0;
+        if (strlen(r.privateKeyPassPhrase) == 0) {
+            fprintf(stderr, "Assuming unencrypted keystore.\n");
+            r.privateKeyPassPhrase[0] = '\0';
+        }
+    }
+            
 
     if (-1 == redir_connect(&r)) {
         tty_restore();

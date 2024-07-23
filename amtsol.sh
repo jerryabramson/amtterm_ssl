@@ -8,7 +8,7 @@ if [[ $1 == "-v" ]]; then
 fi
 
 # Example using Mutual TLS
-CLIENT_CERT="~/Critical/SSL_CERTS/AMT_CLIENT_AND_CA/amtclient.cert"
-CLIENT_KEY="~/Critical/SSL_CERTS/AMT_CLIENT_AND_CA/amtclient.key"
-amtterm  $V -A  -c $CLIENT_CERT -k $CLIENT_KEY $1
+CLIENT_CERT="$HOME/Critical/SSL_CERTS/AMT_CLIENT_AND_CA/amtclient.cert"
+CLIENT_KEY="$HOME/Critical/SSL_CERTS/AMT_CLIENT_AND_CA/amtclient.key"
+amtterm  $V -A  -c "$CLIENT_CERT" -k "$CLIENT_KEY" $@
 
