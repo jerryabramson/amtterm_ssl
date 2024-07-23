@@ -192,8 +192,9 @@ static void usage(FILE *fp)
             "   -q            quiet\n"
             "   -L            use legacy authentication\n"
 #if defined(USE_OPENSSL) || defined(USE_GNUTLS)
+            "   -A            enable SSL and use System Trust Store\n"
             "   -C cacert     enable SSL and use PEM cacert file\n"
-            "   [-c clientcert -k clientkey ]  client certificate and key \n"
+            "   [-c clientcert -k clientkey[:pass] ]  client certificate and key/pass \n"
 #endif
             "   -u user       username (default: admin)\n"
             "   -p pass       password (default: $AMT_PASSWORD)\n"
@@ -220,7 +221,7 @@ int main(int argc, char *argv[])
     r.verbose = 0;
     memcpy(r.type, "SOL ", 4);
     *(r.user) = '\0';
-
+    *(r.privateKeyPassPhrase) = '\0';
     r.cb_data  = &r;
     r.cb_recv  = recv_tty;
     r.cb_state = state_tty;
@@ -229,7 +230,7 @@ int main(int argc, char *argv[])
         snprintf(r.pass, sizeof(r.pass), "%s", h);
 
     for (;;) {
-        if (-1 == (c = getopt(argc, argv, "hvdqu:p:LC:c:k:")))
+        if (-1 == (c = getopt(argc, argv, "Ahvdqu:p:LC:c:k:")))
             break;
         switch (c) {
             case 'v':
@@ -252,6 +253,9 @@ int main(int argc, char *argv[])
                 r.legacy = 1;
                 break;
 #if defined(USE_OPENSSL) || defined(USE_GNUTLS)
+            case 'A':
+                r.cacert = "ABC";
+                break;
             case 'C':
                 r.cacert = optarg;
                 break;
@@ -259,6 +263,11 @@ int main(int argc, char *argv[])
                 r.clientcert = optarg;
                 break;
             case 'k':
+                char *colon = strrchr(optarg, ':');
+                if (colon != NULL) {
+                    strcpy(r.privateKeyPassPhrase, colon+1);
+                    *colon='\0';
+                }
                 r.clientkey = optarg;
                 break;
 #endif
@@ -281,6 +290,22 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
+    tty_save();
+    if (r.clientkey != NULL && (strlen(r.privateKeyPassPhrase) == 0)) {
+        tty_noecho();
+        fprintf(stderr, "Private Key Password: ");
+        fgets(r.privateKeyPassPhrase, sizeof(r.privateKeyPassPhrase), stdin);
+        tty_restore();
+        fprintf(stderr, "\n");
+        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\r')))
+            *h = 0;
+        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\n')))
+            *h = 0;
+        if (strlen(r.privateKeyPassPhrase) == 0) {
+            fprintf(stderr, "A private key pass phrase is required!");
+            exit(1);
+        }
+    }
             
     if (optind < argc)   snprintf(r.host, sizeof(r.host), "%s", argv[optind]);
     if (optind+1 < argc) snprintf(r.port, sizeof(r.port), "%s", argv[optind+1]);
@@ -289,7 +314,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    tty_save();
     if (0 == strlen(r.user)) {
         fprintf(stderr, "AMT Username [admin] for host %s: ", r.host);
         fgets(r.user, sizeof(r.user), stdin);
@@ -304,6 +328,7 @@ int main(int argc, char *argv[])
         tty_noecho();
         fprintf(stderr, "AMT password for username %s on host %s: ", r.user, r.host);
         fgets(r.pass, sizeof(r.pass), stdin);
+        tty_restore();
         fprintf(stderr, "\n");
         if (NULL != (h = strchr(r.pass, '\r')))
             *h = 0;
@@ -316,6 +341,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    tty_noecho();
     tty_raw();
     redir_start(&r);
     redir_loop(&r);

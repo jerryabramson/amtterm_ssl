@@ -70,12 +70,12 @@ static struct ctx *newctx(int fd)
 
 #if defined(USE_OPENSSL)
 
-struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
+
+struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key, char *passphrase)
 {
 	int r;
 	int c=0;
 	struct ctx *ctx;
-	int seclevel = -1;
 
 	if(!(ctx=newctx(fd)))return NULL;
 
@@ -90,16 +90,25 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 		goto err1;
 	}
 
+    /*
+     * TLSv1.1 or earlier are deprecated by IETF and are generally to be
+     * avoided if possible. We require a minimum TLS version of TLSv1.2.
+     */
+    if (!SSL_CTX_set_min_proto_version(ctx->ctx, TLS1_2_VERSION)) {
+        printf("Failed to set the minimum TLS protocol version\n");
+        goto err2;
+    }
 
-	/*
-	 * SSL_CTX_set_options(ctx->ctx,
-         *                     SSL_OP_NO_TLSv1_1|SSL_OP_NO_TLSv1_2);
-	 */
-        /* Added by JAA to suppoprt old AMT */
-	seclevel = SSL_CTX_get_security_level(ctx->ctx);
-    if (ssl_verbose) printf("Current SSL Security Level = %d\n", seclevel);
+	if (ssl_verbose) printf("Setting private key passphrase data\n");
+    SSL_CTX_set_default_passwd_cb_userdata(ctx->ctx, passphrase);
 
-    if (cacert != NULL) {
+    if (!strncmp(cacert, "ABC", 3)) {
+        if (ssl_verbose) printf(APPNAME ": Using System Trust Store.\n");
+        if (!SSL_CTX_set_default_verify_paths(ctx->ctx)) {
+            ERR_print_errors_fp(stderr);
+            goto err2;
+        }
+    } else  if (cacert != NULL) {
         if (ssl_verbose) printf(APPNAME ": Using Certificate Authority: '%s'\n", cacert);
         if(!SSL_CTX_load_verify_locations(ctx->ctx,cacert,NULL)) {
             ERR_print_errors_fp(stderr);
@@ -110,6 +119,12 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
 	SSL_CTX_set_verify_depth(ctx->ctx,5);
 	SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_PEER,NULL);
 
+    if (ssl_verbose) printf("Enable legacy_renegotiation\n");
+    if (!SSL_CTX_set_options(ctx->ctx, SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)) {
+            ERR_print_errors_fp(stderr);
+            goto err2;
+    }
+
     if (client_cert != NULL) {
         if (ssl_verbose) printf(APPNAME ": Loading client certificate: '%s'\n", client_cert);
         if (!SSL_CTX_use_certificate_file(ctx->ctx, client_cert, SSL_FILETYPE_PEM)) {
@@ -119,7 +134,9 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key)
     }
     if (client_key != NULL) {
         if (ssl_verbose) printf(APPNAME ": Loading client key: '%s'\n", client_key);
-        if (!SSL_CTX_use_PrivateKey_file(ctx->ctx, client_key, SSL_FILETYPE_PEM)) perror("ERROR: no private key found!");
+        if (!SSL_CTX_use_PrivateKey_file(ctx->ctx, client_key, SSL_FILETYPE_PEM)) {
+            perror("ERROR: no private key found!");
+        }
     }
 
 	if(!(ctx->ssl=SSL_new(ctx->ctx))) {

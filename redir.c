@@ -156,7 +156,7 @@ int redir_connect(struct redir *r)
     redir_state(r, REDIR_CONNECT);
     r->sock = tcp_connect(&ai, NULL, NULL, r->host,
                           strlen(r->port) ? r->port : defport);
-    r->ctx = sslinit(r->sock, r->cacert, r->clientcert, r->clientkey);
+    r->ctx = sslinit(r->sock, r->cacert, r->clientcert, r->clientkey, r->privateKeyPassPhrase);
     if(r->ctx == NULL) {
         close(r->sock);
         r->sock = -1;

@@ -34,10 +34,12 @@ struct redir {
     unsigned char     buf[64];
     unsigned int      blen;
 
+    /* SSL */
     void              *cacert;
     void              *clientcert;
     void              *clientkey;
     void              *ctx;
+    unsigned char     privateKeyPassPhrase[128];
 
     /* callbacks */
     void *cb_data;
