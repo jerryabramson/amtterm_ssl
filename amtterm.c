@@ -216,6 +216,7 @@ int main(int argc, char *argv[])
     struct redir r;
     char *h;
     int c;
+    char *colon;
 
     memset(&r, 0, sizeof(r));
     r.verbose = 0;
@@ -263,7 +264,7 @@ int main(int argc, char *argv[])
                 r.clientcert = optarg;
                 break;
             case 'k':
-                char *colon = strrchr(optarg, ':');
+                colon = strrchr(optarg, ':');
                 if (colon != NULL) {
                     strcpy(r.privateKeyPassPhrase, colon+1);
                     *colon='\0';
