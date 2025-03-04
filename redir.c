@@ -164,7 +164,8 @@ int redir_connect(struct redir *r)
         r->sock = -1;
     }
     if (-1 == r->sock) {
-        fprintf(stderr, "connection failed!\n");
+        fprintf(stderr, "connection failed: %d\n", errno);
+	perror("Connection failed");
         return -1;
     }
     return 0;

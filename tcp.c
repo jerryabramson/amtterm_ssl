@@ -135,7 +135,6 @@ int tcp_listen(struct addrinfo *ai, char *addr, char *port)
     if (0 != (rc = getaddrinfo(addr, port, ai, &res))) {
         if (tcp_verbose)
             fprintf(stderr, APPNAME ": getaddrinfo: %s [%s]\n", gai_strerror(rc), addr);
-        exit(1);
     }
 
     /* create socket + bind */

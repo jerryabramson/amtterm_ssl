@@ -166,7 +166,10 @@ static void tty_raw(void)
 static void tty_restore(void)
 {
     fcntl(STDIN_FILENO,F_SETFL,saved_fl);
+    saved_attributes.c_lflag &= (ECHO);
     tcsetattr (STDIN_FILENO, TCSANOW, &saved_attributes);
+    
+
 }
 
 /* ------------------------------------------------------------------ */
