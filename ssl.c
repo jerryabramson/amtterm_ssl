@@ -71,15 +71,14 @@ static struct ctx *newctx(int fd)
 #if defined(USE_OPENSSL)
 
 
-struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key, char *passphrase)
+struct ctx *sslinit(int fd, int untrusted, char *cacert, char *client_cert, char *client_key, char *passphrase)
 {
 	int r;
 	int c=0;
 	struct ctx *ctx;
 
 	if(!(ctx=newctx(fd)))return NULL;
-
-	if(!cacert)return ctx;
+	if(!cacert && (untrusted != 1)) return ctx;
 
 	SSL_load_error_strings();
 	SSL_library_init();
@@ -104,24 +103,31 @@ struct ctx *sslinit(int fd,char *cacert, char *client_cert, char *client_key, ch
         SSL_CTX_set_default_passwd_cb_userdata(ctx->ctx, passphrase);
     }
 
-    if (!strncmp(cacert, "ABC", 3)) {
-        if (ssl_verbose) printf(APPNAME ": Using System Trust Store.\n");
-        if (!SSL_CTX_set_default_verify_paths(ctx->ctx)) {
-            ERR_print_errors_fp(stderr);
-            goto err2;
-        }
-    } else  if (cacert != NULL) {
-        if (ssl_verbose) printf(APPNAME ": Using Certificate Authority: '%s'\n", cacert);
-        if(!SSL_CTX_load_verify_locations(ctx->ctx,cacert,NULL)) {
-            ERR_print_errors_fp(stderr);
-            goto err2;
+    if (untrusted != 1) {
+        if (!strncmp(cacert, "ABC", 3)) {
+            if (ssl_verbose) printf(APPNAME ": Using System Trust Store.\n");
+            if (!SSL_CTX_set_default_verify_paths(ctx->ctx)) {
+                ERR_print_errors_fp(stderr);
+                goto err2;
+            }
+        } else  if (cacert != NULL && (untrusted != 1)) {
+            if (ssl_verbose) printf(APPNAME ": Using Certificate Authority: '%s'\n", cacert);
+            if(!SSL_CTX_load_verify_locations(ctx->ctx,cacert,NULL)) {
+                ERR_print_errors_fp(stderr);
+                goto err2;
+            }
         }
     }
 
 	SSL_CTX_set_verify_depth(ctx->ctx,5);
-	SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_PEER,NULL);
+    if (untrusted == 1) {
+        if (ssl_verbose) printf(APPNAME ": Allowing insecure server connections\n");
+        SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_NONE,NULL);
+    } else {
+        SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_PEER,NULL);
+    }
 
-    if (ssl_verbose) printf("Enable legacy_renegotiation\n");
+    if (ssl_verbose) printf(APPNAME ": Enable legacy_renegotiation\n");
     if (!SSL_CTX_set_options(ctx->ctx, SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)) {
             ERR_print_errors_fp(stderr);
             goto err2;

@@ -196,6 +196,7 @@ static void usage(FILE *fp)
             "   -L            use legacy authentication\n"
 #if defined(USE_OPENSSL) || defined(USE_GNUTLS)
             "   -A            enable SSL and use System Trust Store\n"
+            "   -N            Allow insecure server connections\n"
             "   -C cacert     enable SSL and use PEM cacert file\n"
             "   [-c clientcert -k clientkey[:pass] ]  client certificate and key/pass \n"
 #endif
@@ -223,6 +224,7 @@ int main(int argc, char *argv[])
 
     memset(&r, 0, sizeof(r));
     r.verbose = 0;
+    r.untrusted = 0;
     memcpy(r.type, "SOL ", 4);
     *(r.user) = '\0';
     *(r.privateKeyPassPhrase) = '\0';
@@ -234,7 +236,7 @@ int main(int argc, char *argv[])
         snprintf(r.pass, sizeof(r.pass), "%s", h);
 
     for (;;) {
-        if (-1 == (c = getopt(argc, argv, "Ahvdqu:p:LC:c:k:")))
+        if (-1 == (c = getopt(argc, argv, "AhvNdqu:p:LC:c:k:")))
             break;
         switch (c) {
             case 'v':
@@ -257,6 +259,10 @@ int main(int argc, char *argv[])
                 r.legacy = 1;
                 break;
 #if defined(USE_OPENSSL) || defined(USE_GNUTLS)
+            case 'N':
+                r.untrusted = 1;
+                r.cacert = NULL;
+                break;
             case 'A':
                 r.cacert = "ABC";
                 break;

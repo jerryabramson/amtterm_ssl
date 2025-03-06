@@ -35,6 +35,7 @@ struct redir {
     unsigned int      blen;
 
     /* SSL */
+    int               untrusted;
     void              *cacert;
     void              *clientcert;
     void              *clientkey;
