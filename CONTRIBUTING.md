@@ -1,9 +1,11 @@
-From Jerry Abramson
+# From Jerry Abramson
 
-This project was started, and the majority of the original code written by, Gerd Hoffmann.
+* This project was started, and the majority of the original code written by, Gerd Hoffmann.
 
-I found some additional work to support ssl, written by Andreas Steinmetz.
+* I found some additional work to support ssl, written by Andreas Steinmetz.
 
-I added some additional SSL support, in particular I added support for client SSL certificates.
+* I added some additional SSL support, in particular I added support for client SSL certificates.
 
-I also did some general cleanup, and enhanced logging options.
+* I also did some general cleanup, and enhanced logging options.
+
+* I have also enhanced the SSL support to support system trust stores, expired certificates, empty keystore passphrase, and legacy regnotiation.
