@@ -47,12 +47,16 @@ Enable SSL and allow insecure server connections.
 .B -C
 Enable SSL and use PEM cacert file.
 .TP
-.B -c clientcert -k clientkey:pass
+.B -c clientcert -k clientkey[:pass]
 Enable mutual TLS and specify client certificate and client key (with
-optional passphrase).
+optional passphrase). 
 
 .B amtterm
 will prompt on the terminal if the passphrase is not specified.
+.TP
+.B -c clientcert -k clientkey:
+Enable mutual TLS and specify client certificate and client key with
+empty passphrase.
 .SH SEE ALSO
 amttool(1), amt-howto(7)
 .SH AUTHOR
