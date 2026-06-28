@@ -12,7 +12,7 @@ sync:: distclean
 	chmod 444 $(srcdir)/INSTALL $(srcdir)/mk/*.mk
 
 
-repository  := $(shell basename $(PWD))
+#repository  := $(shell basename $(PWD))
 usetito     := $(shell if test -d .tito; then echo yes; else echo no; fi)
 release-dir ?= $(HOME)/projects/Releases
 release-pub ?= bigendian.kraxel.org:/public/vhosts/www.kraxel.org/releases/$(repository)
