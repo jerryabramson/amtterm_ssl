@@ -41,7 +41,7 @@ struct redir {
     void              *clientkey;
     void              *ctx;
     unsigned char     privateKeyPassPhrase[128];
-
+    int               plainKeyStore;
     /* callbacks */
     void *cb_data;
     void (*cb_state)(void *cb_data, enum redir_state old, enum redir_state new);

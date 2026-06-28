@@ -225,6 +225,7 @@ int main(int argc, char *argv[])
     memset(&r, 0, sizeof(r));
     r.verbose = 0;
     r.untrusted = 0;
+    r.plainKeyStore = 0;
     memcpy(r.type, "SOL ", 4);
     *(r.user) = '\0';
     *(r.privateKeyPassPhrase) = '\0';
@@ -277,6 +278,8 @@ int main(int argc, char *argv[])
                 if (colon != NULL) {
                     strcpy(r.privateKeyPassPhrase, colon+1);
                     *colon='\0';
+                    if (strlen(r.privateKeyPassPhrase) == 0)
+                        r.plainKeyStore = 1;
                 }
                 r.clientkey = optarg;
                 break;
@@ -331,17 +334,19 @@ int main(int argc, char *argv[])
     }
 
     if (r.clientkey != NULL && (strlen(r.privateKeyPassPhrase) == 0)) {
-        tty_noecho();
-        fprintf(stderr, "Private Key Password [enter for no pass phrase]: ");
-        fgets(r.privateKeyPassPhrase, sizeof(r.privateKeyPassPhrase), stdin);
-        tty_restore();
-        fprintf(stderr, "\n");
-        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\r')))
-            *h = 0;
-        if (NULL != (h = strchr(r.privateKeyPassPhrase, '\n')))
-            *h = 0;
+        if (r.plainKeyStore == 0) {
+            tty_noecho();
+            fprintf(stderr, "Private Key Password [enter for no pass phrase]: ");
+            fgets(r.privateKeyPassPhrase, sizeof(r.privateKeyPassPhrase), stdin);
+            tty_restore();
+            fprintf(stderr, "\n");
+            if (NULL != (h = strchr(r.privateKeyPassPhrase, '\r')))
+                *h = 0;
+            if (NULL != (h = strchr(r.privateKeyPassPhrase, '\n')))
+                *h = 0;
+        }
         if (strlen(r.privateKeyPassPhrase) == 0) {
-            fprintf(stderr, "Assuming unencrypted keystore.\n");
+            fprintf(stderr, APPNAME ": Assuming unencrypted keystore.\n");
             r.privateKeyPassPhrase[0] = '\0';
         }
     }

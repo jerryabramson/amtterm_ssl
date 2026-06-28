@@ -31,7 +31,7 @@
 
 #include "tcp.h"
 
-#define APPNAME "tcp"
+#define APPNAME "amtterm:tcp"
 
 
 int tcp_verbose;

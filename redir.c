@@ -154,6 +154,7 @@ int redir_connect(struct redir *r)
     ai.ai_family = PF_UNSPEC;
     tcp_verbose = r->verbose;
     ssl_verbose = r->verbose;
+    ssl_untrusted = r->untrusted;
     redir_state(r, REDIR_CONNECT);
     r->sock = tcp_connect(&ai, NULL, NULL, r->host,
                           strlen(r->port) ? r->port : defport);

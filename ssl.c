@@ -36,8 +36,9 @@
 #include "ssl.h"
 
 int ssl_verbose;
+int ssl_untrusted;
 
-#define APPNAME "ssl"
+#define APPNAME "amtterm:ssl"
 
 struct ctx
 {
@@ -70,6 +71,52 @@ static struct ctx *newctx(int fd)
 
 #if defined(USE_OPENSSL)
 
+// Source - https://stackoverflow.com/a/42277544
+
+// Posted by jww, modified by community. See post 'Timeline' for change history
+
+// Retrieved 2026-06-28, License - CC BY-SA 3.0
+
+
+
+static int verify_callback(int preverify, X509_STORE_CTX* x509_ctx)
+{
+    /* For error codes, see http://www.openssl.org/docs/apps/verify.html  */
+    //if (ssl_verbose) printf("%s: verify_callback, preverify= %d\n", APPNAME, preverify);
+    int err = X509_STORE_CTX_get_error(x509_ctx);
+    char *errStr = "";
+    if(preverify == 0)
+    {
+        if(err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
+            errStr = "Error = X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY";
+        else if(err == X509_V_ERR_CERT_UNTRUSTED)
+            errStr =  "Error = X509_V_ERR_CERT_UNTRUSTED";
+        else if(err == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
+            errStr = "Error = X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN";
+        else if(err == X509_V_ERR_CERT_NOT_YET_VALID)
+            errStr = "Error = X509_V_ERR_CERT_NOT_YET_VALID";
+        else if(err == X509_V_ERR_CERT_HAS_EXPIRED)
+            errStr = "Error = X509_V_ERR_CERT_HAS_EXPIRED";
+        else if(err == X509_V_OK)
+            errStr = "Error = X509_V_OK";
+        else
+            fprintf(stderr, "%s: Unknown Error = %d\n", APPNAME, err);
+    }
+
+    if (err == X509_V_OK) // || err == X509_V_ERR_CERT_HAS_EXPIRED)
+        return 1;
+    if (ssl_verbose && (strlen(errStr) > 0)) printf(APPNAME ": %s\n", errStr);
+    if (err == X509_V_ERR_CERT_HAS_EXPIRED) {
+        fprintf(stderr, "%s: preverify=%d, %s\n", APPNAME, preverify, "Ingoring expired certificate!");
+        return 1;
+    }
+    if (ssl_untrusted) {
+        fprintf(stderr, "%s: %s\n", APPNAME, "Ingoring untrusted certificate");
+        return 1;
+    }
+    return preverify;
+}
+
 
 struct ctx *sslinit(int fd, int untrusted, char *cacert, char *client_cert, char *client_key, char *passphrase)
 {
@@ -99,7 +146,7 @@ struct ctx *sslinit(int fd, int untrusted, char *cacert, char *client_cert, char
     }
 
     if (strlen(passphrase) > 0) {
-        if (ssl_verbose) printf("Setting private key passphrase data\n");
+        if (ssl_verbose) printf(APPNAME ": Setting private key passphrase data\n");
         SSL_CTX_set_default_passwd_cb_userdata(ctx->ctx, passphrase);
     }
 
@@ -120,12 +167,9 @@ struct ctx *sslinit(int fd, int untrusted, char *cacert, char *client_cert, char
     }
 
 	SSL_CTX_set_verify_depth(ctx->ctx,5);
-    if (untrusted == 1) {
-        if (ssl_verbose) printf(APPNAME ": Allowing insecure server connections\n");
-        SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_NONE,NULL);
-    } else {
-        SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_PEER,NULL);
-    }
+    if (untrusted && ssl_verbose) printf(APPNAME ": Allowing insecure server connections\n");
+    SSL_CTX_set_verify(ctx->ctx,SSL_VERIFY_PEER,verify_callback);
+
 
     if (ssl_verbose) printf(APPNAME ": Enable legacy_renegotiation\n");
     if (!SSL_CTX_set_options(ctx->ctx, SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)) {
